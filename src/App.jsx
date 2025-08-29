@@ -1,7 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { USDZLoader } from 'three/examples/jsm/loaders/USDZLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import './App.css';
 
@@ -39,36 +38,35 @@ function App() {
     scene.add(directionalLight);
 
     // Load Model
-// Load USDZ Model
-const loader = new USDZLoader();
-let model;
+    const loader = new GLTFLoader();
+    let model;
+    loader.load(
+      '/rose.glb', // Path to your model
+      (gltf) => {
+        model = gltf.scene;
 
-loader.load(
-  '/Rose.usdz', // Path to your USDZ model
-  (usdz) => {
-    model = usdz.scene;
+        // Center and scale the model
+        const box = new THREE.Box3().setFromObject(model);
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
 
-    // Center and scale the model
-    const box = new THREE.Box3().setFromObject(model);
-    const center = box.getCenter(new THREE.Vector3());
-    const size = box.getSize(new THREE.Vector3());
+        // Scale model to fit within a 2x2x2 box
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const scale = 4.0 / maxDim;
+        model.scale.set(scale, scale, scale);
 
-    // Scale model to fit within a 2x2x2 box
-    const maxDim = Math.max(size.x, size.y, size.z);
-    const scale = 4.0 / maxDim;
-    model.scale.set(scale, scale, scale);
+        // Reposition model to the center
+        model.position.sub(center.multiplyScalar(scale));
+        
+        scene.add(model);
+        createParticles(); // Create particles after model is loaded
+      },
+      undefined,
+      (error) => {
+        console.error(error);
+      }
+    );
 
-    // Reposition model to the center
-    model.position.sub(center.multiplyScalar(scale));
-    
-    scene.add(model);
-    createParticles(); // Create particles after model is loaded
-  },
-  undefined,
-  (error) => {
-    console.error(error);
-  }
-);
     // Particles
     let particles, particleMaterial;
     const particleCount = 4000;
